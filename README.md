@@ -126,87 +126,82 @@ NVIDIA RTX 500 Ada Generation Laptop GPU 4GB VRAM GDDR6
 ## Todos os testes usam o mesmo prompt
 **Prompt:** Create a minimal api in C# dotnet 10 with an endpoint that returns a JSON response. It should have a single endpoint at /api/hello that returns { "message": "Hello, World!" } but without using any external libraries or controllers.
 
+**Versões:** Python 3.12.10, torch 2.5.1, CUDA 12.1, transformers 5.5.3
+
+**LLM:** Qwen/Qwen2.5-Coder-7B-Instruct
+
+**Tamanho total:** 15.23 GB
+
 ### Teste 1
-**Versões:** torch 2.5.1 e CUDA 12.1
 
-**Total time:** 15:25 min
+**Usando CUDA:** Sim
 
-**Resultado:**
+**Total time:** 14:18 min
 
-1. Create a new .NET 10 project.
-2. Add the necessary code to define the minimal API.
+### Teste 2
 
-Here's how you can do it:
+**Usando CUDA:** Não
 
-### Step 1: Create a New .NET 10 Project
+**Total time:** 38:37 min
 
-Open your terminal and run the following command to create a new .NET 10 Web API project:
+### Exemplo de resultado
 
-```bash
-dotnet new web -n MinimalApiExample
-cd MinimalApiExample
+Creating a minimal API in .NET 10 involves using the `WebApplication` class and defining routes directly within the `Program.cs` file. Below is an example of how you can create a minimal API with an endpoint `/api/hello` that returns a JSON response `{ "message": "Hello, World!" }`.
+
+First, ensure you have the necessary packages installed. If not, you can install them via the NuGet Package Manager:
+
+```sh
+dotnet add package Microsoft.AspNetCore.Builder
+dotnet add package Microsoft.Extensions.DependencyInjection
+dotnet add package Microsoft.Extensions.Hosting
 ```
 
-### Step 2: Define the Minimal API
-
-Replace the contents of `Program.cs` with the following code:
+Now, create your `Program.cs` file with the following content:
 
 ```csharp
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddControllers();
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseDeveloperExceptionPage();
 }
 
 app.MapGet("/api/hello", () =>
 {
-    return Results.Json(new { message = "Hello, World!" });
+    return new { message = "Hello, World!" };
 });
 
 app.Run();
 ```
 
-### Explanation
+### Explanation:
+1. **WebApplication.CreateBuilder(args)**: This creates a new instance of `WebApplication` which is used to configure the application.
+2. **AddControllers()**: This method adds MVC services to the specified `IServiceCollection`. However, since we're creating a minimal API, this line is optional if you don't need additional MVC features.
+3. **MapGet("/api/hello", ...)**: This defines a GET route at `/api/hello`. The lambda function inside `MapGet` returns an anonymous object containing the message property.
+4. **Run()**: This starts the web host.
 
-- **WebApplication.CreateBuilder(args)**: This creates a new instance of `WebApplicationBuilder`, which is used to configure the application.
+### Running the Application:
+To run the application, navigate to the directory containing your `Program.cs` file and execute the following command:
 
-- **builder.Services.AddEndpointsApiExplorer()**: Adds support for generating Swagger documentation automatically.     
-
-- **builder.Services.AddSwaggerGen()**: Adds support for generating Swagger UI.
-
-- **app.MapGet("/api/hello", () => ...)**: Defines a GET endpoint at `/api/hello`. When this endpoint is accessed, it returns a JSON object `{ "message": "Hello, World!" }`.
-
-- **app.Run()**: Starts the Kestrel server and begins listening for requests.
-
-### Running the Application
-
-After saving the changes, you can run the application using the following command:
-
-```bash
+```sh
 dotnet run
 ```
 
-Once the application is running, open a web browser and navigate to `https://localhost:5001/swagger` (or `http://localhost:5000/swagger` if you're using HTTP). You should see the Swagger UI interface where you can test the `/api/hello` endpoint.
-
-When you click on the `/api/hello` endpoint and execute it, you should see the JSON response:
+Once the application is running, you can access the endpoint at `http://localhost:5000/api/hello` (or `https://localhost:5001/api/hello` if you're using HTTPS) to see the JSON response:
 
 ```json
-{
-  "message": "Hello, World!"
-}
+{ "message": "Hello, World!" }
 ```
 
-This demonstrates a simple minimal API setup
-Elapsed time: 925776.46 ms
+This setup demonstrates how to create a minimal API in .NET 10 with a single endpoint that returns a JSON response.
+Elapsed time: 858880.95 ms
