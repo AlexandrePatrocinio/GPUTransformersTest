@@ -4,13 +4,16 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 
 model_id = "Qwen/Qwen2.5-Coder-7B-Instruct"
 model_dir = "Models/Coders/Qwen"
+device_map = ""
 device = ""
 
 try:    
     gpu_count = torch.cuda.device_count()
     device = "cuda" if torch.cuda.is_available() else "cpu"
+    device_map = "auto" if gpu_count > 0 else "cpu"
 except Exception:
     gpu_count = 0
+    device_map = "cpu"
     device = "cpu"
 
 print(f"Device mode: {device}")
@@ -26,7 +29,7 @@ tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-Coder-7B-Instruct")
 model = AutoModelForCausalLM.from_pretrained(
     model_id,
     cache_dir=model_dir,
-    device_map="auto"
+    device_map=device_map,
 ).eval()
 
 messages = [
@@ -43,7 +46,15 @@ inputs = tokenizer.apply_chat_template(
 
 start_time = time()
 
-outputs = model.generate(**inputs, max_new_tokens=512, do_sample=False)
+outputs = model.generate(
+    **inputs, 
+    max_new_tokens=512, 
+    do_sample=True, 
+    temperature=0.7, 
+    min_p=0.5,
+    repetition_penalty=1.1,
+    pad_token_id=tokenizer.eos_token_id
+)
 output_text = tokenizer.decode(outputs[0][inputs["input_ids"].shape[-1]:], skip_special_tokens=True)
 
 end_time = time()
