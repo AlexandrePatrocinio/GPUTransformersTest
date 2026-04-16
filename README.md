@@ -31,7 +31,7 @@ Este é um guia completo para iniciar um novo projeto Python do zero. Este guia 
    ```
    - Salve o arquivo.
 
-2. Instale os pacotes torch via pip, especificando o índice PyTorch para CUDA 12.1 (ajuste se sua CUDA for diferente):
+2. Instale o pacote torch via pip, especificando o índice PyTorch para CUDA 12.1 (ajuste se sua CUDA for diferente):
    ```
    pip install torch==2.5.1 --index-url https://download.pytorch.org/whl/cu121
    ```
@@ -202,3 +202,6 @@ Once the application is running, you can access the endpoint by navigating to `h
 
 This demonstrates how to create a minimal API in .NET Core with a single endpoint that returns a JSON response without using any external libraries or controllers.
 Elapsed time: 98150.01 ms
+
+### Uso da GPU com CUDA e quantização de 4 bits
+<img width="1120" height="699" alt="image" src="https://github.com/user-attachments/assets/c810c7de-9176-42f2-8ab3-13e3b0931f40" />
