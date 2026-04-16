@@ -15,7 +15,7 @@ Este é um guia completo para iniciar um novo projeto Python do zero. Este guia 
 2. Navegue até o diretório onde deseja criar o projeto (ex.: `cd C:\Users\SeuUsuario\Documents\Projetos`).
 3. Crie uma nova pasta para o projeto: `mkdir ProjetoQwenCUDA`.
 4. Entre na pasta: `cd ProjetoQwenCUDA`.
-5. Crie um ambiente virtual com Python 3.12: `python -m venv .venv312` (o nome ".venv312" indica Python 3.12).
+5. Crie um ambiente virtual com Python 3.12. Exemplo: `python -m venv .venv312` (o nome ".venv312" indica Python 3.12).
 6. Ative o ambiente virtual: `.venv312\Scripts\activate`. Você verá `(.venv312)` no prompt.
 7. Atualize o pip para a versão mais recente: `python -m pip install --upgrade pip`.
 8. Com o python 3.12 já instalado configure o ambiente: `py -3.12 -m venv .venv312`. Caso ainda não tenha instalado a versão 3.12 então o instale como já indicado na sessão ## Pré-requisitos.
@@ -27,6 +27,7 @@ Este é um guia completo para iniciar um novo projeto Python do zero. Este guia 
    transformers>=5.5.3
    accelerate
    safetensors
+   bitsandbytes>=0.46
    ```
    - Salve o arquivo.
 
@@ -40,11 +41,12 @@ Este é um guia completo para iniciar um novo projeto Python do zero. Este guia 
    ```
    pip install -r requirements.txt
    ```
-   - Isso instala transformers (compatível) e accelerate para otimização de GPU.
+   - Isso instala transformers (compatível), accelerate para otimização de GPU e bitsandbytes para a quantização dos modelos.
 
 4. Verifique as instalações:
    - `pip show torch` (deve mostrar versão = 2.5.1 com +cu121).
    - `pip show transformers` (deve ser = 5.5.3).
+   - `pip show bitsandbytes` (deve ser = 0.49.2).
    - Teste CUDA: Execute `python -c "import torch; print(torch.cuda.is_available())"`. Deve retornar `True` se CUDA estiver funcionando.
 
 ## Passo 3: Baixar e Configurar o Modelo
@@ -52,7 +54,7 @@ Este é um guia completo para iniciar um novo projeto Python do zero. Este guia 
 1. Crie uma pasta para cache do modelo: `mkdir Models\Coders\Qwen`.
 2. O modelo Qwen2.5-Coder-7B-Instruct será baixado automaticamente na primeira execução, mas você pode pré-baixá-lo para acelerar:
    - Execute temporariamente: `python -c "from transformers import AutoModelForCausalLM; AutoModelForCausalLM.from_pretrained('Qwen/Qwen2.5-Coder-7B-Instruct', cache_dir='Models/Coders/Qwen')"` (pode levar tempo na primeira vez).
-   - A versão quantizada do modelo `Qwen2.5-Coder (Qwen/Qwen2.5-Coder-7B-Instruct-AWQ)` não é suportada nesta versão do Torch. Na verdade, ele precisa da dependência `gptqmodel` instalada que não é compatível com o `torch 2.5.1`. Portanto, modelos AWQ (menores em tamanho) não serão possíveis nesta versão do projeto.  
+   - A versão quantizada do modelo `Qwen2.5-Coder (Qwen/Qwen2.5-Coder-7B-Instruct-AWQ)` não é suportada nesta versão do Torch. Na verdade, ele precisa da dependência `gptqmodel` instalada que não é compatível com o `torch 2.5.1`. Portanto, modelos AWQ (menores em tamanho) não serão possíveis nesta versão do projeto.
 
 ## Passo 4: Criar o Script Principal
 
@@ -70,12 +72,13 @@ Este é um guia completo para iniciar um novo projeto Python do zero. Este guia 
 4. Se houver erros:
    - Verifique CUDA: `python -c "import torch; print(torch.cuda.get_device_name(0))"`.
    - Reinstale pacotes se necessário.
-   - Para modelos grandes, certifique-se de ter pelo menos 16GB RAM GPU. Nos testes deste guia a NVIDIA RTX 500 Ada Generation possui apenas 4GB VRAM para a GPU. Portanto, extremamente lento.
+   - Para modelos grandes, certifique-se de ter pelo menos 16GB RAM GPU. Nos testes deste guia a `NVIDIA RTX 500 Ada Generation` possui apenas 4GB VRAM para a GPU. Portanto, extremamente lento.
 
 ## Dicas Adicionais e Troubleshooting
 
 ### Desempenho
-Use `device_map="auto"` para distribuir o modelo entre GPU/CPU. Para GPUs pequenas, considere quantização (ex.: AWQ) ou modelos menores porém outras versões do torch e transformers serão necessárias.
+Use `device_map="auto"` para distribuir o modelo entre GPU/CPU. Para GPUs com pouca memória VRAM, considere quantização (ex.: AWQ) ou modelos menores porém outras versões do torch e transformers serão necessárias.
+O uso de quantização, no caso deste teste, tornou-se obrigatório pelo hardware limitado. Este recurso diminui drasticamente o tempo de resposta do modelo. Para tanto, usou-se a biblioteca `bitsandbytes` que ajudou a contornar o problema realizando a quantização em tempo de carregamento. Isto permite cenarios de testes ou provas de conceito mas ainda muito lento para aplicações reais. O trade-off é que trocamos a precisão de calculo (float 16 bits para float 4 bits) por performance. Veja testes mais abaixo neste documento.
 
 ### Erros Comuns
 
@@ -102,7 +105,7 @@ Para desativar o venv, digite `deactivate`.
 
 ---
 
-## Resumo da Estrutura do Projeto
+## Resumo da Estrutura do Projeto deste guia
 
 ```
 ProjetoQwenCUDA/
@@ -126,54 +129,51 @@ NVIDIA RTX 500 Ada Generation Laptop GPU 4GB VRAM GDDR6
 ## Todos os testes usam o mesmo prompt
 **Prompt:** Create a minimal api in C# dotnet 10 with an endpoint that returns a JSON response. It should have a single endpoint at /api/hello that returns { "message": "Hello, World!" } but without using any external libraries or controllers.
 
-**Versões:** Python 3.12.10, torch 2.5.1, CUDA 12.1, transformers 5.5.3
+**Dependências:** Python 3.12.10, torch 2.5.1, CUDA 12.1, transformers 5.5.3 e bitsandbytes 0.49.2
 
 **LLM:** Qwen/Qwen2.5-Coder-7B-Instruct
 
 **Tamanho total:** 15.23 GB
 
-### Teste 1
+### Testes Comparativos
 
-**Usando CUDA:** Sim
-
-**Total time:** 14:18 min
-
-### Teste 2
-
-**Usando CUDA:** Não
-
-**Total time:** 38:37 min
+| Teste   | Usando CUDA | Quantização (4 bits) | Tempo total de resposta |
+|---------|-------------|----------------------|-------------------------|
+| Teste 1 | Sim         | Não                  | 14:18 min               |
+| Teste 2 | Não         | Não                  | 38:37 min               |
+| Teste 3 | Sim         | Sim                  | 1:38 min                |
+| Teste 4 | Não         | Sim                  | ??? infinity loop       |
 
 ### Exemplo de resultado
 
-Creating a minimal API in .NET 10 involves using the `WebApplication` class and defining routes directly within the `Program.cs` file. Below is an example of how you can create a minimal API with an endpoint `/api/hello` that returns a JSON response `{ "message": "Hello, World!" }`.
+Creating a minimal API in .NET Core (now known as .NET) involves using the `WebApplication` class to configure and run your application. Below is an example of how you can create a minimal API with a single endpoint `/api/hello` that returns a JSON response `{ "message": "Hello, World!" }`.
 
-First, ensure you have the necessary packages installed. If not, you can install them via the NuGet Package Manager:
+First, ensure you have .NET installed on your machine. Then, you can create a new project using the following command:
 
 ```sh
-dotnet add package Microsoft.AspNetCore.Builder
-dotnet add package Microsoft.Extensions.DependencyInjection
-dotnet add package Microsoft.Extensions.Hosting
+dotnet new web -n MinimalApiExample
+cd MinimalApiExample
 ```
 
-Now, create your `Program.cs` file with the following content:
+Next, open the `Program.cs` file and replace its content with the following code:
 
 ```csharp
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.UseDeveloperExceptionPage();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 
 app.MapGet("/api/hello", () =>
@@ -184,24 +184,21 @@ app.MapGet("/api/hello", () =>
 app.Run();
 ```
 
-### Explanation:
-1. **WebApplication.CreateBuilder(args)**: This creates a new instance of `WebApplication` which is used to configure the application.
-2. **AddControllers()**: This method adds MVC services to the specified `IServiceCollection`. However, since we're creating a minimal API, this line is optional if you don't need additional MVC features.
-3. **MapGet("/api/hello", ...)**: This defines a GET route at `/api/hello`. The lambda function inside `MapGet` returns an anonymous object containing the message property.
-4. **Run()**: This starts the web host.
+This code sets up a basic ASP.NET Core application with a single GET endpoint `/api/hello`. When this endpoint is accessed, it returns a JSON object containing a message.
 
-### Running the Application:
-To run the application, navigate to the directory containing your `Program.cs` file and execute the following command:
+To run the application, use the following command:
 
 ```sh
 dotnet run
 ```
 
-Once the application is running, you can access the endpoint at `http://localhost:5000/api/hello` (or `https://localhost:5001/api/hello` if you're using HTTPS) to see the JSON response:
+Once the application is running, you can access the endpoint by navigating to `https://localhost:5001/api/hello` (or `http://localhost:5000/api/hello` if you're using HTTP) in your web browser or using a tool like Postman. You should see the JSON response:
 
 ```json
-{ "message": "Hello, World!" }
+{
+  "message": "Hello, World!"
+}
 ```
 
-This setup demonstrates how to create a minimal API in .NET 10 with a single endpoint that returns a JSON response.
-Elapsed time: 858880.95 ms
+This demonstrates how to create a minimal API in .NET Core with a single endpoint that returns a JSON response without using any external libraries or controllers.
+Elapsed time: 98150.01 ms
