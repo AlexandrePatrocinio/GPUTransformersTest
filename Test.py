@@ -1,6 +1,6 @@
 import torch
 from time import time
-from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 
 model_id = "Qwen/Qwen2.5-Coder-7B-Instruct"
 model_dir = "Models/Coders/Qwen"
@@ -10,7 +10,7 @@ device = ""
 try:    
     gpu_count = torch.cuda.device_count()
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    device_map = "auto" if gpu_count > 0 else "cpu"
+    device_map = "cuda" if gpu_count > 0 else "cpu"
 except Exception:
     gpu_count = 0
     device_map = "cpu"
@@ -24,11 +24,20 @@ if torch.cuda.is_available():
 else:
     print("CUDA not available")
 
+bnb_config = BitsAndBytesConfig(
+    load_in_4bit=True,
+    bnb_4bit_compute_dtype=torch.bfloat16,
+    bnb_4bit_quant_type="nf4",
+    bnb_4bit_use_double_quant=True
+)
+
 tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-Coder-7B-Instruct")
 
 model = AutoModelForCausalLM.from_pretrained(
     model_id,
     cache_dir=model_dir,
+    quantization_config=bnb_config,
+    dtype=torch.bfloat16,
     device_map=device_map,
 ).eval()
 
