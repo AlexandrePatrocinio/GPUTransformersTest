@@ -41,33 +41,52 @@ model = AutoModelForCausalLM.from_pretrained(
     device_map=device_map,
 ).eval()
 
-messages = [
-    {"role": "user", "content": "Create a minimal api in C# dotnet 10 with an endpoint that returns a JSON response. It should have a single endpoint at /api/hello that returns { \"message\": \"Hello, World!\" } but without using any external libraries or controllers."},
-]
+context = []
 
-inputs = tokenizer.apply_chat_template(
-	messages,
-	add_generation_prompt=True,
-	tokenize=True,
-	return_dict=True,
-	return_tensors="pt",    
-).to(device)
+system_prompt = "You are a helpful assistant for coding and a dotnet expert. " \
+"Answer questions accurately and provide code examples when necessary. " \
+"Be brief in your answers. Try to adapt them to my context of a maximum of 512 tokens. " \
+"If you don't know the answer, say you don't know instead of making up an answer."
 
-start_time = time()
+context.append({"role": "system", "content": system_prompt})
 
-outputs = model.generate(
-    **inputs, 
-    max_new_tokens=512, 
-    do_sample=True, 
-    temperature=0.7, 
-    min_p=0.5,
-    repetition_penalty=1.1,
-    pad_token_id=tokenizer.eos_token_id
-)
-output_text = tokenizer.decode(outputs[0][inputs["input_ids"].shape[-1]:], skip_special_tokens=True)
+while True:
+    prompt = input("Enter your prompt (or 'quit' to exit):\n")
+    if prompt.lower() == "quit":
+        break
 
-end_time = time()
-elapsed_time_ms = (end_time - start_time) * 1000
+    context.append({"role": "user", "content": prompt})
 
-print(f"Prompt: {messages[0]['content']}\n\nGenerated text: {output_text}")
-print(f"Elapsed time: {elapsed_time_ms:.2f} ms")
+    start_time = time()
+
+    inputs = tokenizer.apply_chat_template(
+        context,
+        add_generation_prompt=True,
+        tokenize=True,
+        return_dict=True,
+        return_tensors="pt",    
+    ).to(device)
+
+    outputs = model.generate(
+        **inputs, 
+        max_new_tokens=512, 
+        do_sample=True, 
+        temperature=0.7, 
+        min_p=0.5,
+        repetition_penalty=1.1,
+        pad_token_id=tokenizer.eos_token_id
+    )
+
+    output_text = tokenizer.decode(outputs[0][inputs["input_ids"].shape[-1]:], skip_special_tokens=True)
+
+    end_time = time()
+    elapsed_time_ms = (end_time - start_time) * 1000
+
+    m = elapsed_time_ms // 60000
+    s = elapsed_time_ms % 60000 / 1000
+
+    context.append({"role": "assistant", "content": output_text})
+
+    print(f"\n\nGenerated text: {output_text}")
+
+    print(f"Elapsed time: {m:.0f} m {s:.0f} s")
