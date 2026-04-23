@@ -1,0 +1,4 @@
+transformers==5.5.4
+accelerate
+safetensors
+bitsandbytes==0.49.2
