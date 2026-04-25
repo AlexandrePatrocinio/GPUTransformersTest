@@ -161,10 +161,10 @@ ProjetoQwenCUDA/
 # Testes
 
 ## Setup
-i7 ultra
-64 GB DDR5
-SSD NVMe 1TB
-NVIDIA RTX 500 Ada Generation Laptop GPU 4GB VRAM GDDR6
+- i7 ultra
+- 64 GB DDR5
+- SSD NVMe 1TB
+- NVIDIA RTX 500 Ada Generation Laptop GPU 4GB VRAM GDDR6
 
 ## Todos os testes usam o mesmo prompt
 **Prompt:** Create a minimal api in C# dotnet 10 with an endpoint that returns a JSON response. It should have a single endpoint at /api/hello that returns { "message": "Hello, World!" } but without using any external libraries or controllers.
